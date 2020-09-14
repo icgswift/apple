@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!--                                     **问题盘点**
+         1. 图片初始不渲染
+         imgs[0].onload = function () {
+            var width = parseInt(window.getComputedStyle(imgs[0], null).width)
+         }  
+         2.页面缩放事件resize
+         3.css媒体查询@media
+         4.js媒体查询对象MediaQueryList
+         5.图片自适应
+         6.getComputedStyle获取元素样式/Jquery获取元素样式$().height()
+         7.用js解决position导致的父元素高度塌陷
+         8.js浮点数运算的问题
+         9.100vw/100vh指的是谁的尺寸 window. innerWidth/innerHieght 即可被用于显示网页的部分(包括滚动条)
+         10.viewprt/vw/vh/% 响应式布局
+    -->
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APPLE历史产品博览</title>
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+        }
+
+        header {
+            height: 10vh;
+            background: gray;
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+        }
+
+        header img {
+            height: 100%;
+            vertical-align: bottom;
+        }
+
+        header p {
+            line-height: 10vh;
+            font-size: 2rem;
+            color: black;
+        }
+
+
+        @media screen and (min-width: 500px) and (max-width: 800px) {
+            #swiper {
+                width: 100% !important;
+            }
+        }
+
+        #container {
+            width: 100vw;
+            height: 90vh;
+            background: url(./img/apple.jpg) no-repeat;
+            background-size: cover;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #swiper {
+            max-width: 100% !important;
+            width: 50%;
+            border-radius: 1%;
+            overflow: hidden;
+            position: relative;
+        }
+
+
+        /*包含所有图片的<div>*/
+
+        #list {
+            /*绝对定位*/
+            position: absolute;
+            z-index: 1;
+        }
+
+        /*所有的图片<img>*/
+        #list img {
+            float: left;
+            /*浮在左侧*/
+        }
+
+        /*包含所有圆点按钮的<div>*/
+        #pointsDiv {
+            width: 10vw;
+            height: 5%;
+            z-index: 2;
+            position: absolute;
+            /* 圆点显示在图片上 */
+            bottom: 10%;
+            /* 定位之后margin auto(水平居中)失效 */
+            /* margin: 0 auto; */
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+        }
+
+        /*所有的圆点<span>*/
+
+        #pointsDiv span {
+            width: 10%;
+            height: 100%;
+            /* 鼠标样式 */
+            cursor: pointer;
+            border: 1px solid #fff;
+            border-radius: 50%;
+            background: #333;
+        }
+
+        /*第一个<span>*/
+        #pointsDiv .on {
+            background: orangered;
+        }
+
+        /*切换图标<a>*/
+        .arrow {
+            /* 去掉超链接下划线 */
+            text-decoration: none;
+            cursor: pointer;
+            width: 10%;
+            height: 10%;
+            /* 行高百分比相对fontSize */
+            font-weight: bold;
+            background-color: RGBA(0, 0, 0, 0.3);
+            color: #fff;
+            /* 居中 */
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 2;
+            display: none;
+        }
+
+        /*鼠标移到切换图标上时*/
+        .arrow:hover {
+            background-color: RGBA(0, 0, 0, 0.7);
+        }
+
+        /*鼠标移到整个div区域时*/
+        #container:hover .arrow {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /*显示*/
+        }
+
+        /*上一个切换图标的左外边距*/
+        #prev {
+            left: 2vw;
+        }
+
+        /*下一个切换图标的右外边距*/
+        #next {
+            right: 2vw;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <img src="./img/apple-logo.png" alt="logo">
+        <p>APPLE历史产品博览</p>
+    </header>
+
+    <div id="container">
+        <div id="swiper">
+            <div id="list">
+                <img src="img/5.jpg" alt="img5" />
+                <img src="img/1.jpg" alt="img1" />
+                <img src="img/2.png" alt="img2" />
+                <img src="img/3.jpg" alt="img3" />
+                <img src="img/4.jpg" alt="img4" />
+                <img src="img/5.jpg" alt="img5" />
+                <img src="img/1.jpg" alt="img1" />
+            </div>
+            <div id="pointsDiv">
+                <span index="1" class="on"></span>
+                <span index="2"></span>
+                <span index="3"></span>
+                <span index="4"></span>
+                <span index="5"></span>
+            </div>
+            <a href="javascript:;" id="prev" class="arrow">
+                <p>
+                    &lt;
+                </p>
+            </a>
+            <a href="javascript:;" id="next" class="arrow">
+                <p>
+                    &gt;
+                </p>
+            </a>
+        </div>
+    </div>
+    <script src="./js/jquery.1.10.2.js"></script>
+    <script>
+        // app.js单页宽度
+        var PAGE_WIDTH
+        // 图片宽度
+        var initWidth
+
+        var imgs = document.querySelectorAll('#list img')
+        var img = document.querySelector('#list img')
+        var list = document.querySelector('#list')
+        var swiper = document.querySelector('#swiper')
+        var p = document.querySelector('header p')
+        var pointsDiv = document.querySelector('#pointsDiv')
+
+        // 监听屏幕缩放
+        window.addEventListener('resize', function () {
+            // 重载页面    防止布局错乱
+            window.location.reload()
+        })
+
+
+        // js媒体查询
+        if (window.matchMedia('(max-width:500px)').matches) {
+            var initHeight = document.documentElement.clientHeight / 2
+            // 设置swiper容器的高度
+            swiper.style.height = initHeight + 'px'
+            // 设置图片高度，宽度自适应
+            for (let i = 0; i < imgs.length; i++) {
+                imgs[i].style.height = initHeight + 'px'
+            }
+            // 获取图片宽度
+            initWidth = parseInt(window.getComputedStyle(img).width)
+            // 重新设置swiper容器的宽度，覆盖样式表中的宽度
+            swiper.style.width = initWidth + 'px'
+
+            // 图片列表尺寸/初始位移
+            list.style.width = initWidth * imgs.length + 'px'
+            list.style.left = -initWidth + 'px'
+            // app.js单页宽度
+            PAGE_WIDTH = initWidth
+            // 隐藏文字
+            p.setAttribute('style', "display:none;")
+            pointsDiv.style.width = '20vw'
+        } else {
+            // 初始化
+            // swiper容器宽
+            initWidth = document.documentElement.clientWidth / 2
+            // 设置图片宽度，高度自适应
+            for (let i = 0; i < imgs.length; i++) {
+                imgs[i].style.width = initWidth + 'px'
+            }
+            // 图片列表尺寸/初始位移
+            list.style.width = initWidth * imgs.length + 'px'
+            list.style.left = -initWidth + 'px'
+            // app.js单页宽度
+            PAGE_WIDTH = initWidth
+
+            // element.style.width 读取内联样式
+            // console.log(window.getComputedStyle(img))  得到css对象(只读)
+            // console.log(window.getComputedStyle(img) .backgroundColor/.getPropertyValue('background-color'))
+            // $('#list').height()
+
+            // 为swiper容器设置高度(list position脱离文档流高度塌陷)
+            swiper.style.height = window.getComputedStyle(list).height
+        }
+    </script>
+    <script src="./js/calc.js"></script>
+    <script src="./js/app.js"></script>
+</body>
+
+</html>
